@@ -1,0 +1,28 @@
+.fractional-quantity-input + .cart-item__error,
+[data-is-fractional="true"] + .cart-item__error,
+[data-fractional-quantity] + .cart-item__error {
+  display: none !important;
+}
+
+.cart-item:has(.fractional-quantity-input) .cart-item__error,
+.cart-item:has([data-is-fractional="true"]) .cart-item__error,
+.cart-item:has([data-fractional-quantity]) .cart-item__error {
+  display: none !important;
+}
+
+/* Ensure fractional inputs can accept decimal points */
+.fractional-quantity-input,
+[data-is-fractional="true"],
+[data-fractional-quantity] {
+  -moz-appearance: textfield;
+}
+
+.fractional-quantity-input::-webkit-inner-spin-button,
+.fractional-quantity-input::-webkit-outer-spin-button,
+[data-is-fractional="true"]::-webkit-inner-spin-button,
+[data-is-fractional="true"]::-webkit-outer-spin-button,
+[data-fractional-quantity]::-webkit-inner-spin-button,
+[data-fractional-quantity]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

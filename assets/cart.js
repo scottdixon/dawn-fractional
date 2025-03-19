@@ -56,29 +56,59 @@ class CartItems extends HTMLElement {
   }
 
   validateQuantity(event) {
-    const inputValue = parseInt(event.target.value);
-    const index = event.target.dataset.index;
+    const input = event.target;
+
+    // Skip validation for fractional quantities
+    if (input.classList.contains('fractional-quantity-input') ||
+        input.hasAttribute('data-is-fractional') ||
+        input.hasAttribute('data-fractional-quantity')) {
+
+      const index = input.dataset.index;
+      const newValue = parseFloat(input.value) || 0.01;
+
+      // Ensure minimum value and proper rounding
+      const value = Math.max(Math.round(newValue * 100) / 100, 0.01);
+      input.value = value;
+
+      // Use JSON for properties to ensure proper cart updates
+      const properties = { Units: value };
+
+      this.updateQuantity(
+        index,
+        1, // Keep actual quantity as 1
+        event,
+        document.activeElement.getAttribute('name'),
+        input.dataset.quantityVariantId,
+        properties
+      );
+
+      return;
+    }
+
+    // Original validation for normal quantities
+    const inputValue = parseInt(input.value);
+    const index = input.dataset.index;
     let message = '';
 
-    if (inputValue < event.target.dataset.min) {
-      message = window.quickOrderListStrings.min_error.replace('[min]', event.target.dataset.min);
-    } else if (inputValue > parseInt(event.target.max)) {
-      message = window.quickOrderListStrings.max_error.replace('[max]', event.target.max);
-    } else if (inputValue % parseInt(event.target.step) !== 0) {
-      message = window.quickOrderListStrings.step_error.replace('[step]', event.target.step);
+    if (inputValue < input.dataset.min) {
+      message = window.quickOrderListStrings.min_error.replace('[min]', input.dataset.min);
+    } else if (inputValue > parseInt(input.max)) {
+      message = window.quickOrderListStrings.max_error.replace('[max]', input.max);
+    } else if (inputValue % parseInt(input.step) !== 0) {
+      message = window.quickOrderListStrings.step_error.replace('[step]', input.step);
     }
 
     if (message) {
       this.setValidity(event, index, message);
     } else {
-      event.target.setCustomValidity('');
-      event.target.reportValidity();
+      input.setCustomValidity('');
+      input.reportValidity();
       this.updateQuantity(
         index,
         inputValue,
         event,
         document.activeElement.getAttribute('name'),
-        event.target.dataset.quantityVariantId
+        input.dataset.quantityVariantId
       );
     }
   }
@@ -144,7 +174,7 @@ class CartItems extends HTMLElement {
     ];
   }
 
-  updateQuantity(line, quantity, event, name, variantId) {
+  updateQuantity(line, quantity, event, name, variantId, properties) {
     this.enableLoading(line);
 
     const body = JSON.stringify({
@@ -152,6 +182,7 @@ class CartItems extends HTMLElement {
       quantity,
       sections: this.getSectionsToRender().map((section) => section.section),
       sections_url: window.location.pathname,
+      properties: properties || undefined
     });
     const eventTarget = event.currentTarget instanceof CartRemoveButton ? 'clear' : 'change';
 
