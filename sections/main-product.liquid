@@ -48,6 +48,60 @@
       min-height: 35px;
     }
 
+    /* Hide add to cart buttons when in update mode */
+    .product-form.fractional-update-mode .product-form__submit,
+    .product-form.fractional-update-mode .shopify-payment-button {
+      display: none !important;
+    }
+
+    .remove-from-cart-button:hover {
+      background-color: #c0392b;
+    }
+
+    .remove-from-cart-button:disabled {
+      opacity: 0.7;
+      cursor: wait;
+    }
+
+    .product-form__submit.cart-update {
+      background-color: rgba(var(--color-button), 0.9);
+    }
+
+    .product-form__submit.cart-update:hover {
+      background-color: rgba(var(--color-button), 1);
+    }
+
+    .product-form__submit.loading {
+      opacity: 0.7;
+      cursor: wait;
+      position: relative;
+    }
+
+    .product-form__submit.loading::after {
+      content: "";
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      top: 50%;
+      left: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid white;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .update-success-message,
+    .update-error-message {
+      margin-top: 8px;
+      font-size: 0.9em;
+    }
+
     @media screen and (min-width: 750px) {
       .section-{{ section.id }}-padding {
         padding-top: {{ section.settings.padding_top }}px;
@@ -58,6 +112,9 @@
 
   <script src="{{ 'product-info.js' | asset_url }}" defer="defer"></script>
   <script src="{{ 'product-form.js' | asset_url }}" defer="defer"></script>
+  {% if product.metafields.custom.fractional_quantity_unit %}
+    <script src="{{ 'fractional-quantity.js' | asset_url }}" defer="defer"></script>
+  {% endif %}
   {%- if product.quantity_price_breaks_configured? -%}
     <script src="{{ 'show-more.js' | asset_url }}" defer="defer"></script>
     <script src="{{ 'price-per-item.js' | asset_url }}" defer="defer"></script>
@@ -259,6 +316,11 @@
                   <label class="quantity__label form__label" for="Quantity-{{ section.id }}">
                     {% if product.metafields.custom.fractional_quantity_unit %}
                       {{ 'Amount' }} (in {{ product.metafields.custom.fractional_quantity_unit }})
+                      <!-- Add hidden loading spinner to prevent classList error -->
+                      <span class="quantity__rules-cart hidden" style="display: none;">
+                        {%- render 'loading-spinner' -%}
+                        <span>(0)</span>
+                      </span>
                     {% else %}
                       {{ 'products.product.quantity.label' | t }}
                       <span class="quantity__rules-cart{% if cart_qty == 0 %} hidden{% endif %}">
@@ -274,7 +336,7 @@
                   <div class="price-per-item__container">
                     <quantity-input class="quantity" data-url="{{ product.url }}" data-section="{{ section.id }}">
                       {% if product.metafields.custom.fractional_quantity_unit %}
-                        <div class="fractional-quantity">
+                        <fractional-quantity class="fractional-quantity">
                           <div class="fractional-quantity-input-wrapper">
                             <input
                               type="number"
@@ -292,8 +354,19 @@
                               value="1"
                               form="{{ product_form_id }}"
                             >
+                            <!-- Add dummy buttons to prevent the classList error -->
+                            <button class="quantity__button hidden" name="minus" type="button" style="display: none;">
+                              <span class="visually-hidden">
+                                {{- 'products.product.quantity.decrease' | t: product: product.title | escape -}}
+                              </span>
+                            </button>
+                            <button class="quantity__button hidden" name="plus" type="button" style="display: none;">
+                              <span class="visually-hidden">
+                                {{- 'products.product.quantity.increase' | t: product: product.title | escape -}}
+                              </span>
+                            </button>
                           </div>
-                        </div>
+                        </fractional-quantity>
                       {% else %}
                         <button class="quantity__button" name="minus" type="button">
                           <span class="visually-hidden">
